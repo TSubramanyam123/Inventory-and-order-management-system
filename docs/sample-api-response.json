@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "name": "Travel Tripod",
+      "description": "Stable shots from a compact, lightweight travel tripod.",
+      "category": "Photography",
+      "brand": "Vista",
+      "price": 599900,
+      "image": "/assets/product-7.svg",
+      "specifications": {
+        "Warranty": "1 year",
+        "Brand": "Vista",
+        "Category": "Photography"
+      },
+      "active": true,
+      "id": "d8f9c3f26f5d4f44aa9bb7b18f8b2379",
+      "created_at": 1792996956.0445406,
+      "updated_at": 1792996956.0445406,
+      "rating": 0,
+      "review_count": 0,
+      "available": 19
+    },
+    {
+      "name": "Portable Speaker",
+      "description": "Rich portable sound in a weather-resistant enclosure.",
+      "category": "Audio",
+      "brand": "SoundArc",
+      "price": 499900,
+      "image": "/assets/product-6.svg",
+      "specifications": {
+        "Warranty": "1 year",
+        "Brand": "SoundArc",
+        "Category": "Audio"
+      },
+      "active": true,
+      "id": "3c97a11f70b147208154e56826016553",
+      "created_at": 1792996956.0275407,
+      "updated_at": 1792996956.0275407,
+      "rating": 0,
+      "review_count": 0,
+      "available": 20
+    }
+  ],
+  "total": 8,
+  "page": 1,
+  "page_size": 2
+}

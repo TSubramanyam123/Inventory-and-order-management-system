@@ -1,0 +1,201 @@
+name: northstar-inventory
+x-env: &env
+  JWT_SECRET: ${JWT_SECRET:?Run python scripts/setup_env.py first}
+  SERVICE_SECRET: ${SERVICE_SECRET:?Generate .env first}
+  DATA_DIR: /data
+  RABBITMQ_URL: amqp://inventory:inventory_local_dev@rabbitmq/
+  REDIS_URL: redis://redis:6379/0
+  REQUIRE_INFRA: "true"
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+  COOKIE_SECURE: "false"
+  TAX_RATE: ${TAX_RATE:-0.18}
+  SHIPPING_CHARGE: ${SHIPPING_CHARGE:-5000}
+  FREE_SHIPPING_MINIMUM: ${FREE_SHIPPING_MINIMUM:-200000}
+  RESERVATION_SECONDS: ${RESERVATION_SECONDS:-900}
+  RETURN_WINDOW_DAYS: ${RETURN_WINDOW_DAYS:-30}
+  ACCESS_TOKEN_SECONDS: ${ACCESS_TOKEN_SECONDS:-900}
+  REFRESH_TOKEN_SECONDS: ${REFRESH_TOKEN_SECONDS:-604800}
+  EVENT_MAX_ATTEMPTS: ${EVENT_MAX_ATTEMPTS:-5}
+  SERVICE_TIMEOUT_SECONDS: ${SERVICE_TIMEOUT_SECONDS:-12}
+  RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-240}
+  AUTH_URL: http://auth:8000
+  PRODUCTS_URL: http://products:8000
+  INVENTORY_URL: http://inventory:8000
+  CART_URL: http://cart:8000
+  ORDERS_URL: http://orders:8000
+  PAYMENTS_URL: http://payments:8000
+  NOTIFICATIONS_URL: http://notifications:8000
+  REVIEWS_URL: http://reviews:8000
+  COUPONS_URL: http://coupons:8000
+  RETURNS_URL: http://returns:8000
+  ANALYTICS_URL: http://analytics:8000
+x-backend: &backend
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+    interval: 15s
+    timeout: 5s
+    retries: 10
+    start_period: 20s
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: inventory
+      RABBITMQ_DEFAULT_PASS: inventory_local_dev
+    ports: ["127.0.0.1:5672:5672", "127.0.0.1:15672:15672"]
+    volumes: ["rabbit-data:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  auth:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/auth_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: auth
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Generate .env first}
+      MANAGER_EMAIL: ${MANAGER_EMAIL:-manager@example.com}
+      MANAGER_PASSWORD: ${MANAGER_PASSWORD:?Generate .env first}
+      CUSTOMER_EMAIL: ${CUSTOMER_EMAIL:-customer@example.com}
+      CUSTOMER_PASSWORD: ${CUSTOMER_PASSWORD:?Generate .env first}
+    volumes: ["auth-data:/data"]
+  products:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/products_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: products
+    volumes: ["products-data:/data"]
+  inventory:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/inventory_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: inventory
+    volumes: ["inventory-data:/data"]
+  cart:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/cart_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: cart
+    volumes: ["cart-data:/data"]
+  orders:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/orders_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: orders
+    volumes: ["orders-data:/data"]
+  payments:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/payments_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: payments
+    volumes: ["payments-data:/data"]
+  notifications:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/notifications_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: notifications
+    volumes: ["notifications-data:/data"]
+  reviews:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/reviews_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: reviews
+    volumes: ["reviews-data:/data"]
+  coupons:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/coupons_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: coupons
+    volumes: ["coupons-data:/data"]
+  returns:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/returns_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: returns
+    volumes: ["returns-data:/data"]
+  analytics:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/analytics_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: analytics
+    volumes: ["analytics-data:/data"]
+  gateway:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: services/gateway_service/Dockerfile
+    environment:
+      <<: *env
+      SERVICE_NAME: gateway
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Generate .env first}
+      MANAGER_EMAIL: ${MANAGER_EMAIL:-manager@example.com}
+      MANAGER_PASSWORD: ${MANAGER_PASSWORD:?Generate .env first}
+      CUSTOMER_EMAIL: ${CUSTOMER_EMAIL:-customer@example.com}
+      CUSTOMER_PASSWORD: ${CUSTOMER_PASSWORD:?Generate .env first}
+    ports: ["127.0.0.1:8000:8000"]
+volumes:
+  rabbit-data:
+  redis-data:
+  auth-data:
+  products-data:
+  inventory-data:
+  cart-data:
+  orders-data:
+  payments-data:
+  notifications-data:
+  reviews-data:
+  coupons-data:
+  returns-data:
+  analytics-data:

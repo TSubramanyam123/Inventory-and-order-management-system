@@ -1,0 +1,41 @@
+name: Test and build
+on: [push, pull_request]
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest
+      - run: python scripts/setup_env.py
+      - run: docker compose config --quiet
+  infrastructure:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports: ['6379:6379']
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        env:
+          RABBITMQ_DEFAULT_USER: inventory
+          RABBITMQ_DEFAULT_PASS: inventory_local_dev
+        ports: ['5672:5672']
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests/test_live_infrastructure.py -v
+        env:
+          RUN_INFRA_TESTS: 'true'
+          RABBITMQ_URL: amqp://inventory:inventory_local_dev@localhost/
+          REDIS_URL: redis://localhost:6379/0

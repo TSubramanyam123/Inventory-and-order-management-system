@@ -1,0 +1,10 @@
+.env
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/
+logs/
+*.sqlite3*
+docs/source-history.bundle
